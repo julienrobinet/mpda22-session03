@@ -1,41 +1,10 @@
 from flask import Flask
 import ghhops_server as hs
 import rhino3dm 
+import meshpath as mp
 
 app = Flask(__name__)
 hops = hs.Hops(app)
-
-
-@hops.component(
-    "/meshFromPoints",
-    name = "meshFromPoints",
-    inputs=[
-        hs.HopsPoint("Points", "P", "Some Points", hs.HopsParamAccess.LIST)
-    ],
-
-    outputs=[
-        hs.HopsMesh("Mesh","M","A simple rhino3dm mesh"),
-
-    ]
-)
-def meshFromPoints(pts):
-
-    m = rhino3dm.Mesh()
-
-    for p in pts:
-        m.Vertices.Add(p.X, p.Y, p.Z)
-
-    
-    m.Faces.AddFace(0,1,2,2) #triangular meshes repeat the last number!
-    m.Faces.AddFace(0,1,3,3)
-
-    print (m.Faces[0])
-    print (m.Faces.TriangleCount)
-
-
-    return m
-
-
 
 @hops.component(
     "/gridMesh",
@@ -72,6 +41,28 @@ def gridMesh(U,V):
 
     return mesh
 
+@hops.component(
+    "/shortestpath",
+    name = "shortestpath",
+    inputs=[
+        hs.HopsMesh("Input Mesh", "M", "Mesh"),
+        hs.HopsInteger("face Index 1","f1","Face index one"),
+        hs.HopsInteger("face Index 2","f2","Face index two")
+
+    ],
+    outputs=[
+        hs.HopsInteger("SP","SP","Shortest path nodes", hs.HopsParamAccess.LIST),
+        hs.HopsMesh("M","M","Stripe")
+
+    ]
+)
+def shortestPath(mesh, f1, f2):
+
+    G = mp.SimpleGraphFromMesh(mesh)
+    SP = mp.shortestPath(G, f1, f2)
+    M = mesh.MeshFaceList()
+    
+    return M
 
 
 if __name__== "__main__":
